@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "-- Umount all disks from this path --"
+
+umount Windows7 && rm -rf Windows7 && echo " Removed Windows7/"
+umount Setup && rm -rf Setup && echo " Removed Setup/"
+umount Study && rm -rf Study && echo " Removed Study/"
+umount Private && rm -rf Private && echo " Removed Private/"
+umount Happy && rm -rf Happy && echo " Removed Happy/"
+

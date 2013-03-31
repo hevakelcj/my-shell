@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "-- Mount all locate disks to this path --"
+
+test -d Windows7 || mkdir Windows7 
+ntfs-3g /dev/sda1 Windows7 && echo " Created Windows7/" 
+
+test -d Setup || mkdir Setup 
+ntfs-3g /dev/sda5 Setup && echo " Created Setup/" 
+
+test -d Study || mkdir Study
+ntfs-3g /dev/sda6 Study && echo " Created Study/" 
+
+test -d Private || mkdir Private
+ntfs-3g /dev/sda7 Private && echo " Created Private/" 
+
+test -d Happy || mkdir Happy
+ntfs-3g /dev/sda8 Happy && echo " Created Happy/" 
+  
