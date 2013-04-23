@@ -1,0 +1,46 @@
+#!/bin/bash
+
+run () {
+
+    if [ ! -f *.pro ] || [ ! -f *.pro.user ]; then
+        echo "Warn: Can't find \"*.pro\" or \"*.pro.user\" files !"
+        return
+    fi
+
+    # 从*.pro.user文件中提供目标生成路径，用awk切割了两次
+    build_path_array=($(grep "BuildDirectory" *.pro.user | grep $1\
+                      | awk -F\< '{print $2}' \
+                      | awk -F\> '{print $2}' \
+                      | uniq))
+
+    # 从*.pro文件中提供目标文件名，即TARGET变量的值
+    exec_file_name=$(echo $(awk -F\= '/TARGET/ {print $2}' *.pro))
+
+    for build_path in ${build_path_array[@]}
+    do
+        # 将目标路径与目标文件名拼接成目标文件全称
+        target=${build_path}/$exec_file_name
+
+        if [ -f "$target" ]; then  # 检查目标文件是否存在
+            echo "Run \"$target\"."
+            $target &    # 执行目标文件
+            break
+        fi 
+    done
+}
+
+help () {
+    echo " Usage: Run executale file directly."
+    echo " run d|D|debug|Debug       #run debug file"
+    echo " run r|R|release|Release   #run release file"
+}
+
+#################################################################
+# start here
+case $1 in
+    D|d|Debug|debug)
+        run Debug;;
+    R|r|Release|release)
+        run Release;;
+    *)  help
+esac
