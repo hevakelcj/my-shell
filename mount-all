@@ -1,19 +1,18 @@
 #!/bin/bash
 
+disk_dev=sdb
+disk_num_array=(1 5 6 7 8)
+disk_name_array=('System' 'Setup' 'Study' 'Private' 'Happy')
+
 echo "-- Mount all locate disks to this path --"
 
-test -d Windows7 || mkdir Windows7 
-ntfs-3g /dev/sda1 Windows7 && echo " Created Windows7/" 
+for num in {0..4}
+do 
+    disk_num=${disk_num_array[$num]}
+    disk_name=${disk_name_array[$num]}
 
-test -d Setup || mkdir Setup 
-ntfs-3g /dev/sda5 Setup && echo " Created Setup/" 
+    test -d $disk_name || mkdir $disk_name
+    ntfs-3g /dev/${disk_dev}${disk_num} $disk_name && echo " Created $disk_name/" 
+done
 
-test -d Study || mkdir Study
-ntfs-3g /dev/sda6 Study && echo " Created Study/" 
-
-test -d Private || mkdir Private
-ntfs-3g /dev/sda7 Private && echo " Created Private/" 
-
-test -d Happy || mkdir Happy
-ntfs-3g /dev/sda8 Happy && echo " Created Happy/" 
-  
+echo "-- Done --"
