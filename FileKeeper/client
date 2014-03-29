@@ -1,0 +1,89 @@
+#!/bin/sh
+
+IP=localhost
+Port=3375
+TempFile=temp
+
+SendStr() {
+    echo "$@" | nc $IP $Port 
+}
+
+SendFile() {
+    nc $IP $Port < $@
+}
+
+Wait() {
+    sleep 0.05
+}
+
+SendFileToServer() {
+    local FileFullName=$1
+    echo push file: $FileFullName
+    SendStr push-file
+    Wait
+    
+    local FileName=$FileFullName
+    SendStr $FileName
+    Wait
+
+    echo pushing file data ...
+    SendFile $FileFullName
+    Wait
+
+    SendStr `md5sum $FileFullName | awk '{print \$1}'`
+    Wait
+
+    feed_back=`nc $IP $Port`
+    echo $feed_back
+}
+
+GetFileFromServer() {
+    local FileName=$1
+    echo Get file: $FileName
+    SendStr pull-file
+    Wait
+    
+    SendStr $FileName
+    Wait
+
+    feed_back=`nc $IP $Port`
+    Wait
+    if [ "$feed_back" = "Not exist" ]; then
+        echo "No such a file."
+        return
+    fi
+
+    nc $IP $Port > $TempFile
+    Wait
+
+    echo "Verify file."
+    local RemoteCheckSum=`nc $IP $Port`
+    local LocalCheckSum=`md5sum $TempFile | awk '{print \$1}'`
+
+    if [ $RemoteCheckSum = $LocalCheckSum ]; then
+        echo "Pass"
+        mv $TempFile $FileName
+    else
+        echo "Fail"
+        rm $TempFile
+    fi
+}
+
+RunCommand() 
+{
+    SendStr "run-cmd"
+    Wait
+    SendStr $@
+    Wait
+    echo `nc $IP $Port`
+}
+
+#############################################
+Order=$1
+shift
+case $Order in 
+push) SendFileToServer $@;;
+pull) GetFileFromServer $@;;
+run) RunCommand $@;;
+*) echo "Unknow order: $1"
+esac

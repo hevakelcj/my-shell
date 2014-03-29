@@ -1,0 +1,112 @@
+#!/bin/bash
+
+###########################################
+Port=3375
+FileSavePath=$HOME/FileKeeperStore
+#-----------------------------------------
+TempFile=$FileSavePath/temp
+LogFile=$FileSavePath/log.txt
+###########################################
+
+
+log_echo() {
+    echo $@
+    msg="[`date +'%Y-%m-%d %H:%M:%S'`] $@"
+    echo $msg >> $LogFile
+}
+
+SendStr() {
+    echo "$@" | nc -l $Port
+}
+
+SendFile() {
+    nc -l $Port < $@
+}
+
+
+RecieveFileFromClient()
+{
+    log_echo "Recieving file."
+
+    local FileName=`nc -l $Port`
+    log_echo "File name : $FileName"
+
+    log_echo "Recieving file data."
+    nc -l $Port > $TempFile
+    log_echo "Done"
+
+    log_echo "Verify this file."
+    local RemoteCheckSum=`nc -l $Port`
+
+    local LocalCheckSum=`md5sum $TempFile | awk '{print \$1}'`
+
+    if [ $RemoteCheckSum = $LocalCheckSum ]; then
+        log_echo success.
+        local FileFullName=$FileSavePath/$FileName
+        mv $TempFile $FileFullName
+        SendStr "Pass."
+    else
+        log_echo Fail.
+        SendStr "Fail."
+        rm $TempFile
+    fi
+}
+
+SendFileToClient()
+{
+    log_echo push file.
+    local FileName=`nc -l $Port`
+    log_echo "File name: $FileName"
+    local FileFullName=$FileSavePath/$FileName
+
+    if [ ! -f $FileFullName ]; then
+        log_echo "File not exist."
+        SendStr "Not exist"
+        return
+    fi
+    SendStr "Found it"
+
+    log_echo "pushing file data."
+    SendFile $FileFullName
+    log_echo "Done"
+
+    local LocalCheckSum=`md5sum $FileFullName | awk '{print \$1}'`
+    SendStr $LocalCheckSum
+}
+
+RunCommand()
+{
+    local cmd=`nc -l $Port`
+    log_echo "Exec commad: $cmd"
+    local curr_path=`pwd`
+    cd $FileSavePath
+    SendStr `$cmd`
+    cd $curr_path
+}
+
+#################################################################
+MainLoop()
+{
+    log_echo ==================================================
+    log_echo Listen port is $Port
+    log_echo Save path is $FileSavePath
+    log_echo Start listen ...
+
+    while true; do
+        log_echo ----------------------------------------------
+        local Command=`nc -l $Port`
+        case $Command in 
+            'push-file')  RecieveFileFromClient;;
+            'pull-file')   SendFileToClient;;
+            'run-cmd') RunCommand;;
+            *)  log_echo Unknow Command: $Command
+        esac
+    done
+}
+
+###########################
+if [ ! -d $FileSavePath ]; then
+    mkdir $FileSavePath
+fi
+MainLoop
+
