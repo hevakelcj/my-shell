@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###########################################
-Port=3375
+Port=3377
 FileSavePath=$HOME/FileKeeperStore
 #-----------------------------------------
 TempFile=$FileSavePath/temp
@@ -92,6 +92,12 @@ RunCommand()
 }
 
 #################################################################
+
+StopServer() {
+    log_echo "=== Stop server ==="
+    exit 0
+}
+
 MainLoop()
 {
     log_echo ==================================================
@@ -99,13 +105,15 @@ MainLoop()
     log_echo Save path is $FileSavePath
     log_echo Start listen ...
 
+    trap StopServer INT
+
     while true; do
         log_echo ----------------------------------------------
         local Command=`RecieveStr`
         case $Command in 
-            'push-file')  RecieveFileFromClient;;
-            'pull-file')   SendFileToClient;;
-            'run-cmd') RunCommand;;
+            'push-file')    RecieveFileFromClient;;
+            'pull-file')    SendFileToClient;;
+            'run-cmd')      RunCommand;;
             *)  log_echo Unknow Command: $Command
         esac
     done
