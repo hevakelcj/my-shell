@@ -12,6 +12,14 @@ SendFile() {
     nc $IP $Port < $@
 }
 
+RecieveStr() {
+    nc $IP $Port
+}
+
+RecieveFile() {
+    nc $IP $Port > $@
+}
+
 Wait() {
     sleep 0.05
 }
@@ -21,7 +29,7 @@ SendFileToServer() {
     echo push file: $FileFullName
     SendStr push-file
     Wait
-    
+
     local FileName=$FileFullName
     SendStr $FileName
     Wait
@@ -33,7 +41,7 @@ SendFileToServer() {
     SendStr `md5sum $FileFullName | awk '{print \$1}'`
     Wait
 
-    feed_back=`nc $IP $Port`
+    feed_back=`RecieveStr`
     echo $feed_back
 }
 
@@ -46,18 +54,18 @@ GetFileFromServer() {
     SendStr $FileName
     Wait
 
-    feed_back=`nc $IP $Port`
+    feed_back=`RecieveStr`
     Wait
     if [ "$feed_back" = "Not exist" ]; then
         echo "No such a file."
         return
     fi
 
-    nc $IP $Port > $TempFile
+    RecieveFile $TempFile
     Wait
 
     echo "Verify file."
-    local RemoteCheckSum=`nc $IP $Port`
+    local RemoteCheckSum=`RecieveStr`
     local LocalCheckSum=`md5sum $TempFile | awk '{print \$1}'`
 
     if [ $RemoteCheckSum = $LocalCheckSum ]; then
@@ -75,7 +83,7 @@ RunCommand()
     Wait
     SendStr $@
     Wait
-    echo `nc $IP $Port`
+    echo `RecieveStr`
 }
 
 #############################################

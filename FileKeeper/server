@@ -23,20 +23,27 @@ SendFile() {
     nc -l $Port < $@
 }
 
+RecieveStr() {
+    nc -l $Port
+}
+
+RecieveFile() {
+    nc -l $Port > $@
+}
 
 RecieveFileFromClient()
 {
     log_echo "Recieving file."
 
-    local FileName=`nc -l $Port`
+    local FileName=`RecieveStr`
     log_echo "File name : $FileName"
 
     log_echo "Recieving file data."
-    nc -l $Port > $TempFile
+    RecieveFile $TempFile
     log_echo "Done"
 
     log_echo "Verify this file."
-    local RemoteCheckSum=`nc -l $Port`
+    local RemoteCheckSum=`RecieveStr`
 
     local LocalCheckSum=`md5sum $TempFile | awk '{print \$1}'`
 
@@ -55,7 +62,7 @@ RecieveFileFromClient()
 SendFileToClient()
 {
     log_echo push file.
-    local FileName=`nc -l $Port`
+    local FileName=`RecieveStr`
     log_echo "File name: $FileName"
     local FileFullName=$FileSavePath/$FileName
 
@@ -76,7 +83,7 @@ SendFileToClient()
 
 RunCommand()
 {
-    local cmd=`nc -l $Port`
+    local cmd=`RecieveStr`
     log_echo "Exec commad: $cmd"
     local curr_path=`pwd`
     cd $FileSavePath
@@ -94,7 +101,7 @@ MainLoop()
 
     while true; do
         log_echo ----------------------------------------------
-        local Command=`nc -l $Port`
+        local Command=`RecieveStr`
         case $Command in 
             'push-file')  RecieveFileFromClient;;
             'pull-file')   SendFileToClient;;
